@@ -1,3 +1,6 @@
+// Results from the competition are here: 
+// https://www.codingame.com/challengereport/5708992986028c48464b3d45bbb4a490b2d6015
+
 package main
 
 import "fmt"
