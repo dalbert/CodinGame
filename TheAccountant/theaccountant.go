@@ -16,11 +16,15 @@ type Enemy struct {
 type Data struct {
 	id, x, y int
 }
+type Player struct {
+	x, y int
+}
 
 func main() {
 	for {
 		var x, y int
 		fmt.Scan(&x, &y)
+		player := Player{x: x, y: y}
 
 		var dataCount int
 		fmt.Scan(&dataCount)
@@ -44,7 +48,7 @@ func main() {
 		advanceEnemies(enemies, data)
 		fmt.Fprintln(os.Stderr, enemies)
 		for _, enemy := range enemies {
-			if enemy.life > 0 {
+			if enemy.life > 0 && canIKillHimBeforeHeGetsANode(enemy, data, player) {
 				fmt.Println(fmt.Sprintf("SHOOT %d", enemy.id)) // MOVE x y or SHOOT id
 				break
 			}
@@ -52,13 +56,16 @@ func main() {
 	}
 }
 
+func canIKillHimBeforeHeGetsANode(enemy Enemy, data []Data, player Player) bool {
+	return true
+}
+
 func advanceEnemies(enemies []Enemy, data []Data) {
 	var datumId int
 	for i, enemy := range enemies {
 		datumId = findNearestDatum(enemy, data)
 		enemy.x, enemy.y = calcMovement(enemy, data[datumId], 500)
-		fmt.Fprintln(os.Stderr, fmt.Sprintf("eId: %d   eX: %d   eY: %d", enemy.id, enemy.x, enemy.y))
-		enemies[i] = enemy // neccessary?
+		enemies[i] = enemy
 	}
 }
 
@@ -81,10 +88,21 @@ func calcDistance(x1 int, y1 int, x2 int, y2 int) float64 {
 }
 
 func calcMovement(enemy Enemy, datum Data, distance int) (x int, y int) {
-	slope := enemy.x - datum.x/enemy.y - datum.y
-	angle := math.Atan(float64(slope))
-	dX := math.Cos(angle) * float64(distance)
-	dY := math.Sin(angle) * float64(distance)
-	fmt.Fprintln(os.Stderr, fmt.Sprintf("m: %v angle: %v   dX: %v   dY: %v  eX: %v  dX: %v  cos: %v  sin: %v", slope, angle, dX, dY, enemy.x, datum.x, math.Cos(angle), math.Sin(angle)))
-	return enemy.x - int(math.Ceil(dX)), enemy.y - int(math.Ceil(dY))
+	var angle float64
+	var xDir, yDir int = 1, 1
+	if enemy.y == datum.y {
+		angle = 0.0
+	} else {
+		slope := (enemy.x - datum.x) / (enemy.y - datum.y)
+		angle = math.Atan(float64(slope))
+	}
+	if enemy.x > datum.x {
+		xDir = -1
+	}
+	if enemy.y > datum.y {
+		yDir = -1
+	}
+	dX := math.Sin(angle) * float64(distance)
+	dY := math.Cos(angle) * float64(distance)
+	return enemy.x + int(math.Ceil(dX))*xDir, enemy.y + int(math.Ceil(dY))*yDir
 }
