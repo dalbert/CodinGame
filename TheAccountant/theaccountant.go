@@ -83,16 +83,16 @@ func advanceEnemies(enemies []Enemy, data []Data) {
 	}
 	var datumID int
 	for i, enemy := range enemies {
-		datumID = findNearestDatum(enemy, dataCoords)
+		datumID = findNearest(enemy, dataCoords)
 		enemy.x, enemy.y = calcMovement(enemy, data[datumID], 500)
 		enemies[i] = enemy
 	}
 }
 
-func findNearestDatum(enemy Coord, data []Coord) int {
+func findNearest(subject Coord, targets []Coord) int {
 	var minID, minDistance, distance int = 0, 20000, 20000
-	for id, datum := range data {
-		distance = int(calcDistance(enemy.X(), enemy.Y(), datum.X(), datum.Y()))
+	for id, target := range targets {
+		distance = int(calcDistance(subject.X(), subject.Y(), target.X(), target.Y()))
 		if distance < minDistance {
 			minDistance = distance
 			minID = id
