@@ -6,18 +6,34 @@ import "os"
 
 //import "os"
 
-/**
- * Shoot enemies before they collect all the incriminating data!
- * The closer you are to an enemy, the more damage you do but don't get too close or you'll get killed.
- **/
+// Enemy butts
 type Enemy struct {
 	id, x, y, life int
 }
+
+func (enemy Enemy) X() int { return enemy.x }
+func (enemy Enemy) Y() int { return enemy.y }
+
+// Data butts
 type Data struct {
 	id, x, y int
 }
+
+func (data Data) X() int { return data.x }
+func (data Data) Y() int { return data.y }
+
+//Player butts
 type Player struct {
 	x, y int
+}
+
+func (player Player) X() int { return player.x }
+func (player Player) Y() int { return player.y }
+
+// Coord butts
+type Coord interface {
+	X() int
+	Y() int
 }
 
 func main() {
@@ -31,18 +47,18 @@ func main() {
 
 		var data []Data
 		for i := 0; i < dataCount; i++ {
-			var dataId, dataX, dataY int
-			fmt.Scan(&dataId, &dataX, &dataY)
-			data = append(data, Data{id: dataId, x: dataX, y: dataY})
+			var dataID, dataX, dataY int
+			fmt.Scan(&dataID, &dataX, &dataY)
+			data = append(data, Data{id: dataID, x: dataX, y: dataY})
 		}
 
 		var enemyCount int
 		fmt.Scan(&enemyCount)
 		var enemies []Enemy
 		for i := 0; i < enemyCount; i++ {
-			var enemyId, enemyX, enemyY, enemyLife int
-			fmt.Scan(&enemyId, &enemyX, &enemyY, &enemyLife)
-			enemies = append(enemies, Enemy{id: enemyId, x: enemyX, y: enemyY, life: enemyLife})
+			var enemyID, enemyX, enemyY, enemyLife int
+			fmt.Scan(&enemyID, &enemyX, &enemyY, &enemyLife)
+			enemies = append(enemies, Enemy{id: enemyID, x: enemyX, y: enemyY, life: enemyLife})
 		}
 		fmt.Fprintln(os.Stderr, enemies)
 		advanceEnemies(enemies, data)
@@ -61,24 +77,28 @@ func canIKillHimBeforeHeGetsANode(enemy Enemy, data []Data, player Player) bool 
 }
 
 func advanceEnemies(enemies []Enemy, data []Data) {
-	var datumId int
+	dataCoords := make([]Coord, len(data))
+	for i := range data {
+		dataCoords[i] = data[i]
+	}
+	var datumID int
 	for i, enemy := range enemies {
-		datumId = findNearestDatum(enemy, data)
-		enemy.x, enemy.y = calcMovement(enemy, data[datumId], 500)
+		datumID = findNearestDatum(enemy, dataCoords)
+		enemy.x, enemy.y = calcMovement(enemy, data[datumID], 500)
 		enemies[i] = enemy
 	}
 }
 
-func findNearestDatum(enemy Enemy, data []Data) int {
-	var minId, minDistance, distance int = 0, 20000, 20000
+func findNearestDatum(enemy Coord, data []Coord) int {
+	var minID, minDistance, distance int = 0, 20000, 20000
 	for id, datum := range data {
-		distance = int(calcDistance(enemy.x, enemy.y, datum.x, datum.y))
+		distance = int(calcDistance(enemy.X(), enemy.Y(), datum.X(), datum.Y()))
 		if distance < minDistance {
 			minDistance = distance
-			minId = id
+			minID = id
 		}
 	}
-	return minId
+	return minID
 }
 
 func calcDistance(x1 int, y1 int, x2 int, y2 int) float64 {
@@ -89,20 +109,19 @@ func calcDistance(x1 int, y1 int, x2 int, y2 int) float64 {
 
 func calcMovement(enemy Enemy, datum Data, distance int) (x int, y int) {
 	var angle float64
-	var xDir, yDir int = 1, 1
 	if enemy.y == datum.y {
 		angle = 0.0
 	} else {
 		slope := (enemy.x - datum.x) / (enemy.y - datum.y)
 		angle = math.Atan(float64(slope))
 	}
-	if enemy.x > datum.x {
-		xDir = -1
-	}
-	if enemy.y > datum.y {
-		yDir = -1
-	}
 	dX := math.Sin(angle) * float64(distance)
 	dY := math.Cos(angle) * float64(distance)
-	return enemy.x + int(math.Ceil(dX))*xDir, enemy.y + int(math.Ceil(dY))*yDir
+	if (enemy.x > datum.x && dX > 0) || (enemy.x < datum.x && dX < 0) {
+		dX = dX * -1
+	}
+	if (enemy.y > datum.y && dY > 0) || (enemy.y < datum.y && dY < 0) {
+		dY = dY * -1
+	}
+	return enemy.x + int(math.Ceil(dX)), enemy.y + int(math.Ceil(dY))
 }
