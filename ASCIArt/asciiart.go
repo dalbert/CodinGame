@@ -31,13 +31,9 @@ func main() {
 	for i := 0; i < H; i++ {
 		scanner.Scan()
 		ROW := scanner.Text()
-		fmt.Fprintln(os.Stderr, ROW[L*13:L*13+L])
 		font = append(font, scanFontRow(ROW, L))
 	}
-	fmt.Fprintln(os.Stderr, T)
-	fmt.Fprintln(os.Stderr, font[0][13])
 
-	// fmt.Fprintln(os.Stderr, "Debug messages...")
 	fmt.Println(compileString(T, font, L, H)) // Write answer to stdout
 }
 
@@ -70,7 +66,7 @@ func stringToIntArray(input string) []int {
 func scanFontRow(row string, charWidth int) []string {
 	var charRows []string
 	for i := 0; i < 27; i++ {
-		charRows = append(charRows, row[i*charWidth:i*charWidth+charWidth-1])
+		charRows = append(charRows, row[i*charWidth:i*charWidth+charWidth])
 	}
 	return charRows
 }
