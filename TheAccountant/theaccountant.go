@@ -4,14 +4,15 @@ import "fmt"
 import "math"
 import "os"
 
-//import "os"
-
 // Enemy butts
 type Enemy struct {
 	id, x, y, life int
 }
 
+// X butts
 func (enemy Enemy) X() int { return enemy.x }
+
+// Y butts
 func (enemy Enemy) Y() int { return enemy.y }
 
 // Data butts
@@ -19,7 +20,10 @@ type Data struct {
 	id, x, y int
 }
 
+// X butts
 func (data Data) X() int { return data.x }
+
+// Y butts
 func (data Data) Y() int { return data.y }
 
 //Player butts
@@ -27,7 +31,10 @@ type Player struct {
 	x, y int
 }
 
+// X butts
 func (player Player) X() int { return player.x }
+
+// Y butts
 func (player Player) Y() int { return player.y }
 
 // Coord butts
