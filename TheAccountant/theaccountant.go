@@ -7,6 +7,7 @@ import "os"
 // Enemy butts
 type Enemy struct {
 	id, x, y, life int
+	distance       float64 // distance from player
 }
 
 // X butts
@@ -62,11 +63,15 @@ func main() {
 		var enemyCount int
 		fmt.Scan(&enemyCount)
 		var enemies []Enemy
+		var newEnemy Enemy
 		for i := 0; i < enemyCount; i++ {
 			var enemyID, enemyX, enemyY, enemyLife int
 			fmt.Scan(&enemyID, &enemyX, &enemyY, &enemyLife)
-			enemies = append(enemies, Enemy{id: enemyID, x: enemyX, y: enemyY, life: enemyLife})
+			newEnemy = Enemy{id: enemyID, x: enemyX, y: enemyY, life: enemyLife}
+			newEnemy.distance = calcDistance(player, newEnemy)
+			enemies = append(enemies, newEnemy)
 		}
+
 		fmt.Fprintln(os.Stderr, enemies)
 		advanceEnemies(enemies, data)
 		fmt.Fprintln(os.Stderr, enemies)
@@ -99,7 +104,7 @@ func advanceEnemies(enemies []Enemy, data []Data) {
 func findNearest(subject Coord, targets []Coord) int {
 	var minID, minDistance, distance int = 0, 20000, 20000
 	for id, target := range targets {
-		distance = int(calcDistance(subject.X(), subject.Y(), target.X(), target.Y()))
+		distance = int(calcDistance(subject, target))
 		if distance < minDistance {
 			minDistance = distance
 			minID = id
@@ -108,9 +113,9 @@ func findNearest(subject Coord, targets []Coord) int {
 	return minID
 }
 
-func calcDistance(x1 int, y1 int, x2 int, y2 int) float64 {
-	horizontal := math.Pow(float64(x1-x2), 2)
-	vertical := math.Pow(float64(y1-y2), 2)
+func calcDistance(a Coord, b Coord) float64 {
+	horizontal := math.Pow(float64(a.X()-b.X()), 2)
+	vertical := math.Pow(float64(a.Y()-b.Y()), 2)
 	return math.Sqrt(horizontal + vertical)
 }
 
