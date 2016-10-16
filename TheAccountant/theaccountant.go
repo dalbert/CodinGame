@@ -88,6 +88,7 @@ func calcDistance(x1 int, y1 int, x2 int, y2 int) float64 {
 }
 
 func calcMovement(enemy Enemy, datum Data, distance int) (x int, y int) {
+	fmt.Fprintln(os.Stderr, fmt.Sprintf("EID: %d, tDID: %d", enemy.id, datum.id))
 	var angle float64
 	var xDir, yDir int = 1, 1
 	if enemy.y == datum.y {
@@ -96,13 +97,13 @@ func calcMovement(enemy Enemy, datum Data, distance int) (x int, y int) {
 		slope := (enemy.x - datum.x) / (enemy.y - datum.y)
 		angle = math.Atan(float64(slope))
 	}
-	if enemy.x > datum.x {
-		xDir = -1
-	}
-	if enemy.y > datum.y {
-		yDir = -1
-	}
 	dX := math.Sin(angle) * float64(distance)
 	dY := math.Cos(angle) * float64(distance)
+	if enemy.x > datum.x && dX > 0 {
+		xDir = -1
+	}
+	if enemy.y > datum.y && dY > 0 {
+		yDir = -1
+	}
 	return enemy.x + int(math.Ceil(dX))*xDir, enemy.y + int(math.Ceil(dY))*yDir
 }
