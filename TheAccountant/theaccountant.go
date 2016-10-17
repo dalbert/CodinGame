@@ -151,8 +151,8 @@ func calcMovement(enemy Enemy, datum Data, distance int) (x int, y int) {
 		slope := (enemy.x - datum.x) / (enemy.y - datum.y)
 		angle = math.Atan(float64(slope))
 	}
-	dX := math.Sin(angle) * float64(distance)
-	dY := math.Cos(angle) * float64(distance)
+	dX := math.Sin(angle) * float64(distance) // I think these sin/cos
+	dY := math.Cos(angle) * float64(distance) // are reversed
 	if (enemy.x > datum.x && dX > 0) || (enemy.x < datum.x && dX < 0) {
 		dX = dX * -1
 	}
