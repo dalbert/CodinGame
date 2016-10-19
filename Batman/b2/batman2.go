@@ -10,47 +10,94 @@ const warmer = "WARMER"
 const colder = "COLDER"
 const same = "SAME"
 const unknown = "UNKNOWN"
-const left = -1
-const right = 1
-const up = -1
-const down = 1
 
 func main() {
 	var W, H int
 	fmt.Scan(&W, &H)
+	left, top, right, bottom := 0, 0, W-1, H-1
+	X, Y := false, true // which dimension are we bifurcating
 
 	// N: maximum number of turns before game over.
 	var N int
 	fmt.Scan(&N)
 
-	var X0, Y0 int
+	var X0, Y0, midline int
 	var A, B Point
 	fmt.Scan(&X0, &Y0)
 	A = Point{x: X0, y: Y0}
-	B = Point{x: X0, y: Y0}
 
 	for {
 		var bombDistance string
 		fmt.Scan(&bombDistance)
 		fmt.Fprintln(os.Stderr, bombDistance)
-		if bombDistance == unknown {
-			B.x, B.y = A.x, A.y
-			A.x, A.y = W/2, H/2
-//			A.x, A.y = 1, 3
-		} else if bombDistance != same {
-			m, perpM, d := calcSlope(A, B), calcPerpSlope(A, B), calcDistance(A, B)
-			dX, dY := calcDeltas(m, d/2)
-			midPoint := Point{x: B.x + int(dX), y: B.y + int(dY)}
-			b := calcYOffset(midPoint, perpM)
-			fmt.Fprintln(os.Stderr, d)
-			fmt.Fprintln(os.Stderr, m, perpM, b)
-			fmt.Fprintln(os.Stderr, dX, dY)
-			fmt.Fprintln(os.Stderr, Point{x: 0, y: int(perpM*0+b)}, midPoint, Point{x: 4, y: int(perpM*4+b)}, perpM*0+b, perpM*4+b)
-			fmt.Fprintln(os.Stderr, fmt.Sprintf("...%v --%v--> %v", B, midPoint, A))
-		}
+		switch bombDistance {
+		case warmer:
+			if A.x != B.x { // prior turn was X, so update X bounds
+				midline = int(Round(float64(A.x + B.x) / 2, .5, 0))
+				if A.x > B.x {
+					left = midline
+				} else {
+					right = midline
+				}
+			}
+			if A.y != B.y { // prior turn was Y, so update Y bounds
+				midline = int(Round(float64(A.y + B.y) / 2, .5, 0))
+				fmt.Fprintln(os.Stderr, midline)
+				if A.y > B.y {
+					top = midline
+				} else {
+					bottom = midline-1
+				}
+			}
+		case colder:
+			if A.x != B.x { // prior turn was X, so update X bounds
+				midline = int(Round(float64(A.x + B.x) / 2, .5, 0))
+				if A.x > B.x {
+					right = midline
+				} else {
+					left = midline
+				}
+			}
+			if A.y != B.y { // prior turn was Y, so update Y bounds
+				midline = int(Round(float64(A.y + B.y) / 2, .5, 0))
+				if A.y > B.y {
+					bottom = midline
+				} else {
+					top = midline
+				}
+			}
+		case same:
+		case unknown:
 
+		}
+		if B.x == A.x && B.y == A.y { // made no change, skip this turn and try the other dimension
+			X, Y = swapDimension(X, Y)
+			fmt.Fprintln(os.Stderr, X, Y)
+			continue
+		}
+		B.x, B.y = A.x, A.y
+		if Y {
+			A.y = int(Round(float64(bottom + top) / 2, .5, 0))
+		} else {
+			A.x = int(Round(float64(left + right) / 2, .5, 0))
+		}
+		fmt.Fprintln(os.Stderr, left, right, top, bottom, X, Y, Round(float64(left + right) / 2, .5, 0), Round(float64(bottom + top) / 2, .5, 0))
+		if left == right {
+			X, Y = false, true
+		} else if top == bottom {
+			X, Y = true, false
+		} else {
+			X, Y = swapDimension(X, Y)
+		}
 		fmt.Println(A.x, A.y) // Write action to stdout
 	}
+}
+
+func swapDimension(X bool, Y bool) (bool, bool) {
+	if X {
+		return false, true
+	}
+	return true, false
 }
 
 func calcDistance(a Point, b Point) float64 {
