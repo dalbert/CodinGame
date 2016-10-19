@@ -5,24 +5,14 @@ import "os"
 import "bufio"
 import "strconv"
 
-//import "strings"
-//import "strconv"
-
-/**
- * Auto-generated code below aims at helping you parse
- * the standard input according to the problem statement.
- **/
-
 func main() {
 	scanner := bufio.NewScanner(os.Stdin)
 	scanner.Buffer(make([]byte, 1000000), 1000000)
 	scanner.Split(bufio.ScanWords)
 
-	// n: the number of temperatures to analyse
 	var n int
 	scanner.Scan()
 	fmt.Sscan(scanner.Text(), &n)
-	fmt.Fprintln(os.Stderr, n)
 	var m, md, td int = 0, 5527, 0
 	for scanner.Scan() {
 		if t, err := strconv.Atoi(scanner.Text()); err == nil {
@@ -37,7 +27,5 @@ func main() {
 			}
 		}
 	}
-
-	// fmt.Fprintln(os.Stderr, "Debug messages...")
-	fmt.Println(m) // Write answer to stdout
+	fmt.Println(m)
 }
