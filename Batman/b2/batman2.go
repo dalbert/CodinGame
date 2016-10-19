@@ -36,14 +36,17 @@ func main() {
 		if bombDistance == unknown {
 			B.x, B.y = A.x, A.y
 			A.x, A.y = W/2, H/2
-			A.x, A.y = 1, 3
+//			A.x, A.y = 1, 3
 		} else if bombDistance != same {
-			m, d := calcSlope(A, B), calcDistance(A, B)
+			m, perpM, d := calcSlope(A, B), calcPerpSlope(A, B), calcDistance(A, B)
 			dX, dY := calcDeltas(m, d/2)
+			midPoint := Point{x: B.x + int(dX), y: B.y + int(dY)}
+			b := calcYOffset(midPoint, perpM)
 			fmt.Fprintln(os.Stderr, d)
-			fmt.Fprintln(os.Stderr, m)
+			fmt.Fprintln(os.Stderr, m, perpM, b)
 			fmt.Fprintln(os.Stderr, dX, dY)
-			fmt.Fprintln(os.Stderr, fmt.Sprintf("%v --> %v", B, A))
+			fmt.Fprintln(os.Stderr, Point{x: 0, y: int(perpM*0+b)}, midPoint, Point{x: 4, y: int(perpM*4+b)}, perpM*0+b, perpM*4+b)
+			fmt.Fprintln(os.Stderr, fmt.Sprintf("...%v --%v--> %v", B, midPoint, A))
 		}
 
 		fmt.Println(A.x, A.y) // Write action to stdout
@@ -55,7 +58,17 @@ func calcDistance(a Point, b Point) float64 {
 }
 
 func calcSlope(a Point, b Point) float64 {
-	return float64(a.y - b.y)/float64(a.x - b.x)
+	m := float64(a.y - b.y)/float64(a.x - b.x)
+	if math.IsInf(m, -1) {return 0}
+	return m
+}
+
+func calcPerpSlope(a Point, b Point) float64{
+	return 1 / (float64(a.y - b.y)/float64(a.x - b.x)) * -1
+}
+
+func calcYOffset(midPoint Point, slope float64) (b float64) {
+	return float64(midPoint.y) - (slope * float64(midPoint.x))
 }
 
 func calcDeltas(slope float64, distance float64) (dX float64, dY float64) {
@@ -63,6 +76,22 @@ func calcDeltas(slope float64, distance float64) (dX float64, dY float64) {
 	dX = math.Cos(angle) * distance
 	dY = math.Sin(angle) * distance
 	return dX, dY
+}
+
+func Round(val float64, roundOn float64, places int ) (newVal float64) {
+	var round float64
+	pow := math.Pow(10, float64(places))
+	digit := pow * val
+	_, div := math.Modf(digit)
+	_div := math.Copysign(div, val)
+	_roundOn := math.Copysign(roundOn, val)
+	if _div >= _roundOn {
+		round = math.Ceil(digit)
+	} else {
+		round = math.Floor(digit)
+	}
+	newVal = round / pow
+	return
 }
 
 type Point struct {
