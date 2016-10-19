@@ -36,17 +36,17 @@ func main() {
 		if bombDistance == unknown {
 			B.x, B.y = A.x, A.y
 			A.x, A.y = W/2, H/2
-			A.x, A.y = 1, 3
+//			A.x, A.y = 1, 3
 		} else if bombDistance != same {
 			m, perpM, d := calcSlope(A, B), calcPerpSlope(A, B), calcDistance(A, B)
 			dX, dY := calcDeltas(m, d/2)
-			midPoint := Point{x: A.x + int(dX), y: A.y + int(dY)}
-			b := calcYOffset(midPoint, m)
+			midPoint := Point{x: B.x + int(dX), y: B.y + int(dY)}
+			b := calcYOffset(midPoint, perpM)
 			fmt.Fprintln(os.Stderr, d)
 			fmt.Fprintln(os.Stderr, m, perpM, b)
 			fmt.Fprintln(os.Stderr, dX, dY)
-			fmt.Fprintln(os.Stderr, midPoint)
-			fmt.Fprintln(os.Stderr, fmt.Sprintf("...%v --> %v", B, A))
+			fmt.Fprintln(os.Stderr, Point{x: 0, y: int(perpM*0+b)}, midPoint, Point{x: 4, y: int(perpM*4+b)}, perpM*0+b, perpM*4+b)
+			fmt.Fprintln(os.Stderr, fmt.Sprintf("...%v --%v--> %v", B, midPoint, A))
 		}
 
 		fmt.Println(A.x, A.y) // Write action to stdout
