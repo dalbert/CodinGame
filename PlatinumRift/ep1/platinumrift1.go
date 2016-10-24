@@ -1,9 +1,6 @@
 package main
 
-import (
-	"fmt"
-	"strings"
-)
+import "fmt"
 
 func main() {
 	// playerCount: the amount of players (2 to 4)
@@ -32,12 +29,14 @@ func main() {
 	for {
 		// platinum: my available Platinum
 		var myPlatinum int
+		zonesByPlayer := make(map[int][]int, 4)
+
 		fmt.Scan(&myPlatinum)
 
 		var neutralZoneCount int
 		for i := 0; i < zoneCount; i++ {
 			z := zones[i]
-			var myPods int
+			var myPodCount int
 			var enemyPods [3]int
 			// zId: this zone's ID
 			// ownerId: the player who owns this zone (-1 otherwise)
@@ -47,42 +46,54 @@ func main() {
 			// podsP3: player 3's PODs on this zone (always 0 for a two or three player game)
 			var zID, ownerID, podsP0, podsP1, podsP2, podsP3 int
 			fmt.Scan(&zID, &ownerID, &podsP0, &podsP1, &podsP2, &podsP3)
+			if ownerID == -1 {
+				neutralZoneCount++
+			}
+			zonesByPlayer[ownerID] = append(zonesByPlayer[ownerID], zID)
 			switch myID {
 			case -1:
-				myPods, enemyPods = 0, [3]int{0, 0, 0}
-				neutralZoneCount++
+				myPodCount, enemyPods = 0, [3]int{0, 0, 0}
 			case 0:
-				myPods, enemyPods = podsP0, [3]int{podsP1, podsP2, podsP3}
+				myPodCount, enemyPods = podsP0, [3]int{podsP1, podsP2, podsP3}
 			case 1:
-				myPods, enemyPods = podsP1, [3]int{podsP0, podsP2, podsP3}
+				myPodCount, enemyPods = podsP1, [3]int{podsP0, podsP2, podsP3}
 			case 2:
-				myPods, enemyPods = podsP2, [3]int{podsP0, podsP1, podsP3}
+				myPodCount, enemyPods = podsP2, [3]int{podsP0, podsP1, podsP3}
 			case 3:
-				myPods, enemyPods = podsP3, [3]int{podsP0, podsP1, podsP2}
+				myPodCount, enemyPods = podsP3, [3]int{podsP0, podsP1, podsP2}
 			}
-			z.ownerID, z.myPods, z.enemyPods = ownerID, myPods, enemyPods
+			z.ownerID, z.myPods, z.enemyPods = ownerID, myPodCount, enemyPods
 		}
 
 		//		fmt.Fprintln(os.Stderr, zones)
 		//		fmt.Fprintln(os.Stderr, myPlatinum)
-		moves, buys := []string{}, []string{}
+		moves, buys := moveList{}, []buy{}
 		podBudget := myPlatinum / podCost
-		buys = claimNeutralZones(podBudget, zones, zonesByPlatinum, myID)
-		buys = append(buys, reinforceOwnedZones(podBudget, zones, zonesByPlatinum, myID)...)
+		if neutralZoneCount > 0 {
+			buys = claimNeutralZones(&podBudget, zones, zonesByPlatinum, myID)
+		}
+		buys = append(buys, reinforceOwnedZones(&podBudget, zones, zonesByPlayer[myID])...)
 
-		moveCommand := strings.Join(moves, " ")
+		moveCommand := moves.String()
 		fmt.Println(moveCommand)
-		buyCommand := strings.Join(buys, " ")
+		buyCommand := buys.String()
 		fmt.Println(buyCommand)
 
 	}
 }
-func reinforceOwnedZones(podBudget int, zones map[int]*zone, zonesByPlatinum map[int][]int, myID int) (buys []string) {
+func reinforceOwnedZones(podBudget *int, zones map[int]*zone, myZones []int) (buys []buy) {
+	for _, zID := range myZones {
+		if *podBudget > 0 {
+			buys = append(buys, buy{quantity: 1, zID: zID})
+		} else {
+			return
+		}
+	}
 	return
 }
-func claimNeutralZones(podBudget int, zones map[int]*zone, zonesByPlatinum map[int][]int, myID int) (buys []string) {
+func claimNeutralZones(podBudget *int, zones map[int]*zone, zonesByPlatinum map[int][]int, myID int) (buys []buy) {
 	for i := 6; i > -1; i-- {
-		if podBudget < 1 {
+		if *podBudget < 1 {
 			return
 		}
 		for _, zID := range zonesByPlatinum[i] {
@@ -91,14 +102,14 @@ func claimNeutralZones(podBudget int, zones map[int]*zone, zonesByPlatinum map[i
 			if z.ownerID == myID || z.ownerID != -1 {
 				continue
 			}
-			if z.EnemyCount() > z.myPods { // TODO: if there are enemyPods, it's probably not neutral and you can't place pods directly on it
+			if z.EnemyCount() > z.myPods { // fighting for contested neutral zones (maybe, not sure how this simultaneous biz works)
 				need = z.EnemyCount() - z.myPods + 1
 			}
-			if podBudget > need { // can I afford to take this zone?
-				buys = append(buys, fmt.Sprintf("%d %d", need, zID))
-				podBudget = podBudget - need
+			if *podBudget > need { // can I afford to take this zone?
+				buys = append(buys, buy{quantity: need, zID: zID})
+				*podBudget = *podBudget - need
 			}
-			if podBudget < 1 {
+			if *podBudget < 1 {
 				return
 			}
 		}
@@ -120,6 +131,30 @@ func (z *zone) EnemyCount() int {
 }
 func (z *zone) String() string {
 	return fmt.Sprintf("%d{i: %d, p: %d, e: %d}", z.ownerID, z.id, z.platinum, z.enemyPods[0]+z.enemyPods[1]+z.enemyPods[2])
+}
+
+type buy struct {
+	quantity, zID int
+}
+type buyList []buy
+
+func (b buy) String() string {
+	return fmt.Sprintf("%d %d", b.quantity, b.zID)
+}
+func (bl []buy) String() string {
+	return fmt.Sprint(bl...)
+}
+
+type move struct {
+	quantity, originZID, destinationZID int
+}
+type moveList []move
+
+func (m move) String() string {
+	return fmt.Sprintf("%d %d %d", m.quantity, m.originZID, m.destinationZID)
+}
+func (ml moveList) String() string {
+	return fmt.Sprint(ml...)
 }
 
 const podCost = 20
