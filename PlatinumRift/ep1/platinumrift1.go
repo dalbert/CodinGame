@@ -1,6 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"os"
+)
 
 func main() {
 	// playerCount: the amount of players (2 to 4)
@@ -67,21 +70,23 @@ func main() {
 
 		//		fmt.Fprintln(os.Stderr, zones)
 		//		fmt.Fprintln(os.Stderr, myPlatinum)
-		moves, buys := moveList{}, []buy{}
+		moves, buys := moveList{}, buyList{}
 		podBudget := myPlatinum / podCost
 		if neutralZoneCount > 0 {
 			buys = claimNeutralZones(&podBudget, zones, zonesByPlatinum, myID)
 		}
 		buys = append(buys, reinforceOwnedZones(&podBudget, zones, zonesByPlayer[myID])...)
+		fmt.Fprintln(os.Stderr, buys)
 
 		moveCommand := moves.String()
 		fmt.Println(moveCommand)
 		buyCommand := buys.String()
+		fmt.Fprintln(os.Stderr, buyCommand)
 		fmt.Println(buyCommand)
 
 	}
 }
-func reinforceOwnedZones(podBudget *int, zones map[int]*zone, myZones []int) (buys []buy) {
+func reinforceOwnedZones(podBudget *int, zones map[int]*zone, myZones []int) (buys buyList) {
 	for _, zID := range myZones {
 		if *podBudget > 0 {
 			buys = append(buys, buy{quantity: 1, zID: zID})
@@ -91,7 +96,7 @@ func reinforceOwnedZones(podBudget *int, zones map[int]*zone, myZones []int) (bu
 	}
 	return
 }
-func claimNeutralZones(podBudget *int, zones map[int]*zone, zonesByPlatinum map[int][]int, myID int) (buys []buy) {
+func claimNeutralZones(podBudget *int, zones map[int]*zone, zonesByPlatinum map[int][]int, myID int) (buys buyList) {
 	for i := 6; i > -1; i-- {
 		if *podBudget < 1 {
 			return
@@ -141,8 +146,11 @@ type buyList []buy
 func (b buy) String() string {
 	return fmt.Sprintf("%d %d", b.quantity, b.zID)
 }
-func (bl []buy) String() string {
-	return fmt.Sprint(bl...)
+func (bl buyList) String() (str string) {
+	for _, b := range bl {
+		str = str + " " + b.String()
+	}
+	return
 }
 
 type move struct {
@@ -154,7 +162,11 @@ func (m move) String() string {
 	return fmt.Sprintf("%d %d %d", m.quantity, m.originZID, m.destinationZID)
 }
 func (ml moveList) String() string {
-	return fmt.Sprint(ml...)
+	var str string
+	for _, m := range ml {
+		str = str + " " + m.String()
+	}
+	return str
 }
 
 const podCost = 20
