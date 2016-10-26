@@ -37,6 +37,7 @@ func main() {
 		fmt.Scan(&myPlatinum)
 
 		var neutralZoneCount int
+		myZonesByPlatinum, neutralZonesByPlatinum, enemyZonesByPlatinum := make(map[int][]int, 7), make(map[int][]int, 7), make(map[int][]int, 7)
 		for i := 0; i < zoneCount; i++ {
 			z := zones[i]
 			var myPodCount int
@@ -53,7 +54,16 @@ func main() {
 				neutralZoneCount++
 			}
 			zonesByPlayer[ownerID] = append(zonesByPlayer[ownerID], zID)
-			switch myID {
+			switch ownerID {
+			case myID:
+				myZonesByPlatinum[zones[zID].platinum] = append(myZonesByPlatinum[zones[zID].platinum], zID)
+			case -1:
+				neutralZonesByPlatinum[zones[zID].platinum] = append(neutralZonesByPlatinum[zones[zID].platinum], zID)
+			default:
+				enemyZonesByPlatinum[zones[zID].platinum] = append(enemyZonesByPlatinum[zones[zID].platinum], zID)
+			}
+
+			switch myID { // numbers of pods on this zone
 			case -1:
 				myPodCount, enemyPods = 0, [3]int{0, 0, 0}
 			case 0:
@@ -67,7 +77,8 @@ func main() {
 			}
 			z.ownerID, z.myPods, z.enemyPods = ownerID, myPodCount, enemyPods
 		}
-
+		fmt.Fprintln(os.Stderr, myZonesByPlatinum)
+		podAverageByPlatinum(myZonesByPlatinum)
 		//		fmt.Fprintln(os.Stderr, zones)
 		//		fmt.Fprintln(os.Stderr, myPlatinum)
 		moves, buys := moveList{}, buyList{}
@@ -76,12 +87,10 @@ func main() {
 			buys = claimNeutralZones(&podBudget, zones, zonesByPlatinum, myID)
 		}
 		buys = append(buys, reinforceOwnedZones(&podBudget, zones, zonesByPlayer[myID])...)
-		fmt.Fprintln(os.Stderr, buys)
 
 		moveCommand := moves.String()
 		fmt.Println(moveCommand)
 		buyCommand := buys.String()
-		fmt.Fprintln(os.Stderr, buyCommand)
 		fmt.Println(buyCommand)
 
 	}
@@ -90,6 +99,7 @@ func reinforceOwnedZones(podBudget *int, zones map[int]*zone, myZones []int) (bu
 	for _, zID := range myZones {
 		if *podBudget > 0 {
 			buys = append(buys, buy{quantity: 1, zID: zID})
+			*podBudget = *podBudget - 1
 		} else {
 			return
 		}
@@ -118,6 +128,12 @@ func claimNeutralZones(podBudget *int, zones map[int]*zone, zonesByPlatinum map[
 				return
 			}
 		}
+	}
+	return
+}
+func podAverageByPlatinum(zonesByPlatinum map[int][]int) (averages [7]float32) {
+	for platinum, zones := range zonesByPlatinum {
+		fmt.Fprintln(os.Stderr, platinum, zones)
 	}
 	return
 }
